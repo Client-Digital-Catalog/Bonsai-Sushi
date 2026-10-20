@@ -273,6 +273,8 @@ svg{display:block;width:16px;height:16px;flex-shrink:0}
 .type small{font-size:11.5px;color:var(--mut);line-height:1.35}
 .ck-tag{display:inline-block;font-size:12px;font-weight:700;padding:6px 12px;border-radius:99px;background:var(--s3);margin-bottom:14px}
 .btn-row{display:flex;gap:10px}
+a.btn{text-decoration:none}
+.btn.off{opacity:.35;pointer-events:none}
 .btn-row .btn{height:50px}
 .btn.ghost{flex:1;background:var(--s3);color:var(--txt);box-shadow:none}
 .sh-foot .btn{height:50px;width:100%}
@@ -651,12 +653,7 @@ function buildMsg(){
   m+=`${L}\n💰 *Total: ${money(t)}*\n${L}\n\nEstaré atento a la respuesta. ¡Muchas gracias! 🫱🏻‍🫲🏼`;
   return m;
 }
-function sendWA(){
-  if(!canSend()) return;
-  window.open(`https://wa.me/584125242614?text=${encodeURIComponent(buildMsg())}`,'_blank');
-  Object.keys(cart).forEach(k=>delete cart[k]);
-  renderCart(); closeAll(); toast('Pedido enviado');
-}
+function waUrl(){return `https://wa.me/584125242614?text=${encodeURIComponent(buildMsg())}`}
 
 const A={
   cart:()=>{renderCart();open('sCart')},
@@ -683,7 +680,7 @@ const A={
   next:()=>{ck.step=2;renderCheckout()},
   ref:(_,el)=>{ck.ref=el.dataset.v;renderCheckout()},
   back:()=>{ck.step=1;renderCheckout()},
-  send:sendWA
+  sent:()=>{Object.keys(cart).forEach(k=>delete cart[k]);renderCart();setTimeout(closeAll,300);toast('Pedido enviado')}
 };
 const TYPES=[
   ['tienda','🏪','En tienda','Organizas tu pedido y lo recoges en la tienda'],
@@ -718,13 +715,14 @@ function renderCheckout(){
       <div class="field"><label>${ck.type==='regalo'?'Tu cédula':'Cédula'}</label><input id="fCed" value="${ck.ced}" placeholder="Ej: V-12345678" inputmode="numeric"></div>
       ${fields}
       <div class="sumbox">${items.map(i=>{const p=byId[i.id];return `<div><span>${p.n}${i.size?` (${i.size})`:''} ×${i.q}</span><span>${money(unitPrice(p,i.m)*i.q)}</span></div>`}).join('')}<div class="t"><span>Total</span><span>${money(t)}</span></div></div>`;
-    foot=`<div class="btn-row"><button class="btn ghost" data-a="back">Atrás</button><button class="btn wa" id="sendBtn" ${canSend()?'':'disabled'} data-a="send">Enviar a WhatsApp</button></div>`;
+    foot=`<div class="btn-row"><button class="btn ghost" data-a="back">Atrás</button><a class="btn wa${canSend()?'':' off'}" id="sendBtn" ${canSend()?`href="${waUrl()}" target="_blank" rel="noopener"`:''} data-a="sent">Enviar a WhatsApp</a></div>`;
   }
   $('#ckBody').innerHTML=body;
   $('#ckFoot').innerHTML=foot;
   $$('#ckBody input').forEach(inp=>inp.oninput=()=>{
     ck[FIELD[inp.id]]=inp.value;
-    const b=$('#sendBtn'); if(b) b.disabled=!canSend();
+    const b=$('#sendBtn');
+    if(b){const ok=canSend(); b.classList.toggle('off',!ok); ok?(b.href=waUrl()):b.removeAttribute('href')}
   });
 }
 function openCheckout(){ ck.step=1; renderCheckout(); open('sCK'); }
